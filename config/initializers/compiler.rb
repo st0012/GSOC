@@ -51,3 +51,10 @@ templates = compiler.template_paths.map do |template_path|
 end.compact.flatten
 
 
+view = ActionView::Base.new(compiler.paths, {})
+
+templates.each do |template|
+  template.send(:compile!, view)
+end
+
+ApplicationController.view_paths = compiler.paths

@@ -1,13 +1,5 @@
 class PostsController < ApplicationController
-  puts self.view_paths.object_id
-  puts self.view_paths.paths.first.object_id
   before_action :set_post, only: [:show, :edit, :update, :destroy]
-  before_action :puts_data
-
-  def puts_data
-    puts self.class.view_paths.object_id
-    puts self.class.view_paths.paths.first.object_id
-  end
 
   # GET /posts
   # GET /posts.json
