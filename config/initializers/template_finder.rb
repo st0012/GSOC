@@ -33,46 +33,19 @@ module ActionView
 end
 
 class TemplateFinder
-  attr_reader :app, :root, :paths
+  attr_reader :app, :root
 
   def initialize(app)
     @app = app
     @root = app.root
-    @paths = paths
-    app.reload_routes!
-  end
-
-  def templates
-    route_hashes.map do |route_hash|
-      name = route_hash[:action]
-      prefix = route_hash[:controller]
-      partial = name.start_with?("_")
-      key = details_key.get(details)
-      locals = []
-
-      template = resolver.find_all(name, prefix, partial, details, key, locals)
-
-      template.present? ? template : nil
-    end.compact.flatten
   end
 
   def resolver
     paths.first
   end
 
-  def routes_set
-    app.routes.named_routes.routes
-  end
-
-  def route_hashes
-    routes_set.keys.map do |route_name|
-      route_hash = routes_set[route_name].defaults
-      route_hash if route_hash.present?
-    end.compact
-  end
-
   def paths
-    ActionView::PathSet.new(
+    @paths ||= ActionView::PathSet.new(
       [ActionView::OptimizedFileSystemResolver.new(view_path.first)]
     )
   end
@@ -95,7 +68,66 @@ class TemplateFinder
   end
 end
 
-finder= TemplateFinder.new(Rails.application)
+class FileTemplateFinder < TemplateFinder
+  def templates
+    paths = Dir.glob("#{root}/app/views/**/*.html.erb")
+    paths.map do |template_path|
+      name = get_name(template_path)
+      prefix = get_prefix(template_path)
+      partial = name.start_with?("_")
+      key = details_key.get(details)
+      locals = []
+
+      template = resolver.find_all(name, prefix, partial, details, key, locals)
+
+      template.present? ? template : nil
+    end.compact.flatten
+  end
+
+  def get_name(template_path)
+    template_path.split("/").last.split(".").first
+  end
+
+  def get_prefix(template_path)
+    template_path.split("/")[-2]
+  end
+end
+
+class RouteTemplateFinder < TemplateFinder
+  def initialize(app)
+    super
+    app.reload_routes!
+  end
+
+  def templates
+    route_hashes.map do |route_hash|
+      name = route_hash[:action]
+      prefix = route_hash[:controller]
+      partial = name.start_with?("_")
+      key = details_key.get(details)
+      locals = []
+
+      template = resolver.find_all(name, prefix, partial, details, key, locals)
+
+      template.present? ? template : nil
+    end.compact.flatten
+  end
+
+  def routes_set
+    app.routes.named_routes.routes
+  end
+
+  def route_hashes
+    routes_set.keys.map do |route_name|
+      route_hash = routes_set[route_name].defaults
+      route_hash if route_hash.present?
+    end.compact
+  end
+end
+
+finder= FileTemplateFinder.new(Rails.application)
+# finder= RouteTemplateFinder.new(Rails.application)
+
 view = ActionView::Base.new(finder.paths, {})
 templates = finder.templates
 
