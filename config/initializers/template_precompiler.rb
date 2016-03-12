@@ -46,12 +46,12 @@ class TemplateFinder
 
   def paths
     @paths ||= ActionView::PathSet.new(
-      [ActionView::OptimizedFileSystemResolver.new(view_path.first)]
+      [ActionView::OptimizedFileSystemResolver.new(view_path)]
     )
   end
 
   def view_path
-    Dir.glob("#{root}/app/views")
+    Dir.glob("#{root}/app/views").first
   end
 
   def details_key
@@ -125,14 +125,34 @@ class RouteTemplateFinder < TemplateFinder
   end
 end
 
-finder= FileTemplateFinder.new(Rails.application)
-# finder= RouteTemplateFinder.new(Rails.application)
+class TemplateCompiler
+  attr_reader :app, :finder
 
-view = ActionView::Base.new(finder.paths, {})
-templates = finder.templates
+  def initialize(app, finder: RouteTemplateFinder)
+    @app = app
+    @finder = finder.new(app)
+  end
 
-templates.each do |template|
-  template.send(:compile!, view)
+  def store_compiled_result
+    ActionController::Base.view_paths = finder.paths
+  end
+
+  def compile_templates!
+    templates.each do |template|
+      template.send(:compile!, view)
+    end
+  end
+
+  def templates
+    @templates ||= finder.templates
+  end
+
+  def view
+    @view ||= ActionView::Base.new(finder.paths, {})
+  end
 end
 
-ApplicationController.view_paths = finder.paths
+template_compiler = TemplateCompiler.new(Rails.application)
+template_compiler.compile_templates!
+template_compiler.store_compiled_result
+
