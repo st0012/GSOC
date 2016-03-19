@@ -1,7 +1,7 @@
 module ActionView
   class Template
     def compile!(view)
-      puts "Is (#{object_id}) compiled? #{@compiled}"
+      puts "Is (#{self.inspect}) compiled? #{@compiled}"
       return if @compiled
 
       # Templates can be used concurrently in threaded environments
@@ -78,6 +78,8 @@ class FileTemplateFinder < TemplateFinder
       key = details_key.get(details)
       locals = []
 
+      name.sub!(/\_/, "") if partial
+
       template = resolver.find_all(name, prefix, partial, details, key, locals)
 
       template.present? ? template : nil
@@ -152,7 +154,7 @@ class TemplateCompiler
   end
 end
 
-template_compiler = TemplateCompiler.new(Rails.application)
+template_compiler = TemplateCompiler.new(Rails.application, finder: FileTemplateFinder)
 template_compiler.compile_templates!
 template_compiler.store_compiled_result
 

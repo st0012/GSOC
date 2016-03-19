@@ -8,33 +8,6 @@ Bundler.require(*Rails.groups)
 
 module Sample
   class Application < Rails::Application
-    class TemplateCompiler
-      attr_reader :root
-      def initialize(root)
-        @root = root
-      end
-
-      def html_templates
-        Dir.glob("#{root}/app/views/**/*.html.erb")
-      end
-
-      def details_key
-        ActionView::LookupContext::DetailsKey
-      end
-
-      def details
-        {
-          :locale=>[:en],
-          :formats=>[:html],
-          :variants=>[],
-          :handlers=>[:erb, :builder, :raw, :ruby, :coffee, :jbuilder]
-        }
-      end
-    end
-
-    compiler = TemplateCompiler.new(Rails.application.root)
-    templates = compiler.html_templates
-
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration should go into files in config/initializers
     # -- all .rb files in that directory are automatically loaded.
@@ -49,5 +22,6 @@ module Sample
 
     # Do not swallow errors in after_commit/after_rollback callbacks.
     config.active_record.raise_in_transactional_callbacks = true
+    config.action_view.cache_template_loading = true
   end
 end
