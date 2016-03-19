@@ -11,28 +11,28 @@
 
 ```
 # I monkey-patched the `compile!` method in `ActionView::Template` so it prints out these lines
-# numbers indicate template's object_id
-# the boolean shows that the template is not compiled yet
-Is (70201687708620) compiled? false
-Is (70201678855860) compiled? false
-Is (70201678851900) compiled? false
-Is (70201678848340) compiled? false
-Is (70201687692700) compiled? false
-Is (70201687689420) compiled? false
-Is (70201678838020) compiled? false
-Is (70201678834060) compiled? false
+Is (app/views/layouts/application.html.erb) compiled? false
+Is (app/views/posts/_form.html.erb) compiled? false
+Is (app/views/posts/edit.html.erb) compiled? false
+Is (app/views/posts/index.html.erb) compiled? false
+Is (app/views/posts/new.html.erb) compiled? false
+Is (app/views/posts/show.html.erb) compiled? false
+Is (app/views/users/_form.html.erb) compiled? false
+Is (app/views/users/edit.html.erb) compiled? false
+Is (app/views/users/index.html.erb) compiled? false
+Is (app/views/users/new.html.erb) compiled? false
+Is (app/views/users/show.html.erb) compiled? false
 ```
 
 - Visit `posts` and `users`'s resouces paths like `localhost:3000/posts` or `localhost:3000/users`. And you will see:
 
 ```
-# template 70201687692700 (posts/index) already compiled during initialization
-# so it returns true here
-Is (70201687692700) compiled? true
-  Post Load (1.4ms)  SELECT "posts".* FROM "posts"
-  Rendered posts/index.html.erb within layouts/application (5.6ms)
-# because I haven't find a way to find layouts/application correctly, it was not compiled until now
-Is (70201713690000) compiled? false
+Processing by PostsController#index as HTML
+Is (app/views/posts/index.html.erb) compiled? true
+  Post Load (0.2ms)  SELECT "posts".* FROM "posts"
+  Rendered posts/index.html.erb within layouts/application (2.8ms)
+Is (app/views/layouts/application.html.erb) compiled? true
+Completed 200 OK in 29ms (Views: 27.8ms | ActiveRecord: 0.2ms)
 ```
 ## My approaches to implement this feature
 
@@ -51,7 +51,9 @@ Get all the template paths and get their `name (usually action)` and `prefix (no
 - Inspect every files' path in the `app/views` folder.
 - Inspect application's routes, which is very convenient for getting their `name` and `prefix`.
 
-I think the second approach might be better than the first one. But I can't get some templates' path using this way, like `layouts/application.html.erb` since there won't be any route for it.
+~~I think the second approach might be better than the first one. But I can't get some templates' path using this way, like `layouts/application.html.erb` since there won't be any route for it.~~
+
+**Update**: After some experiments, I think it would be better to use the first approach. Because it's very difficult to find layouts or partials through routes.
 
 #### 2. Create `PathSet` instance and resolvers
 
