@@ -1,7 +1,7 @@
 module ActionView
   class Template
     def compile!(view)
-      puts "Is (#{self.inspect}) compiled? #{@compiled}"
+      puts "Is (#{self.inspect}/#{object_id}) compiled? #{@compiled}"
       return if @compiled
 
       # Templates can be used concurrently in threaded environments
@@ -136,7 +136,7 @@ class TemplateCompiler
   end
 
   def store_compiled_result
-    ActionController::Base.view_paths = finder.paths
+    ActionController::Base._view_paths = finder.paths
   end
 
   def compile_templates!
