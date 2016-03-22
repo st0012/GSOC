@@ -63,7 +63,7 @@ class TemplateFinder
       :locale=>[:en],
       :formats=>[:html],
       :variants=>[],
-      :handlers=>[:erb, :builder, :raw, :ruby, :coffee, :jbuilder]
+      :handlers=>[:raw, :erb, :html, :builder, :ruby, :coffee]
     }
   end
 end
