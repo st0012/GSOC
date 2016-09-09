@@ -57,33 +57,36 @@ class TemplateFinder
   def details_key
     ActionView::LookupContext::DetailsKey
   end
-
-  def details
-    {
-      :locale=>[:en],
-      :formats=>[:html],
-      :variants=>[],
-      :handlers=>[:raw, :erb, :html, :builder, :ruby, :coffee]
-    }
-  end
 end
 
 class FileTemplateFinder < TemplateFinder
   def templates
-    paths = Dir.glob("#{root}/app/views/**/*.html.erb")
+    paths = Dir.glob("#{root}/app/views/**/*")
     paths.map do |template_path|
       name = get_name(template_path)
       prefix = get_prefix(template_path)
       partial = name.start_with?("_")
-      key = details_key.get(details)
       locals = []
 
       name.sub!(/\_/, "") if partial
 
-      template = resolver.find_all(name, prefix, partial, details, key, locals)
-
-      template.present? ? template : nil
+      ActionView::Template::Types.symbols.map do |format|
+        details = make_details(format)
+        key = details_key.get(details)
+        template = resolver.find_all(name, prefix, partial, details, key, locals)
+        template.present? ? template : nil
+      end.compact
     end.compact.flatten
+  end
+
+  def raw_details
+    view.lookup_context.instance_variable_get(:@details)
+  end
+
+  def make_details(format)
+    details = raw_details
+    details[:formats] = [format]
+    details
   end
 
   def get_name(template_path)
@@ -92,6 +95,10 @@ class FileTemplateFinder < TemplateFinder
 
   def get_prefix(template_path)
     template_path.split("/")[-2]
+  end
+
+  def view
+    @view ||= ActionView::Base.new(paths, {})
   end
 end
 
@@ -109,16 +116,12 @@ class TemplateCompiler
 
   def compile_templates!
     templates.each do |template|
-      template.send(:compile!, view)
+      template.send(:compile!, finder.view)
     end
   end
 
   def templates
     @templates ||= finder.templates
-  end
-
-  def view
-    @view ||= ActionView::Base.new(finder.paths, {})
   end
 end
 
